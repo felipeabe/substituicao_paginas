@@ -1,3 +1,4 @@
+import random
 from random import randint
 numero_quadros=int(input("Número de quadros: "))
 paginas=int(input('Paginas distintas: '))
@@ -21,6 +22,7 @@ class AlgoritimoSubstitucao():
         print("2 - CLOCK")
         print("3 - LFU")
         print("4 - FIFO ")
+        print("5 - NRU ")
         print("0 - Encerrar")
         opcao = int(input("Opcao: "))
         return opcao
@@ -30,7 +32,8 @@ class AlgoritimoSubstitucao():
                     1: self.lru,
                     2: self.clock,
                     3: self.lfu,
-                    4: self.fifo}
+                    4: self.fifo,
+                    5: self.nru}
 
         while True:
             opcao = self.print_menu()
@@ -222,6 +225,84 @@ class AlgoritimoSubstitucao():
         print(f"MISS compulsoria {miss_compulsoria}")
         print(f"MISS capacidade {miss_capacidade}")
         print(f"{len(substituidos)} Substituições")
+        
+    def generate_lista_classes(self, lista_bit_r, lista_bit_m):
+        lista=[]
+        for indice,bit in enumerate(lista_bit_r):
+            lista.append(lista_bit_r[indice]*2+lista_bit_m[indice])
+            
+        return lista
+        
+        
+
+
+    def nru(self):
+        miss_compulsoria = 0
+        miss_capacidade = 0
+        hit = 0
+        indicador = 0
+        substituidos = []
+        lista_bit_r = [0] * self.linhas
+        lista_bit_m = [0] * self.linhas
+        lista_classes = [None] * self.linhas
+        cache = [None] * self.linhas
+        clock_interrupt = 0  # Clock interrupt counter
+        clock_interval = 10  # Number of memory accesses before clock interrupt
+    
+        for mem in self.ordem:
+            if mem in cache:
+                hit += 1
+                index = cache.index(mem)
+                lista_bit_r[index] = 1  # Update reference bit
+            else:
+                if mem in substituidos:
+                    index = substituidos.index(mem)
+                    cache[indicador] = mem
+                    lista_bit_r[indicador] = 1  # Update reference bit
+                    lista_bit_m[indicador] = 0  # Update modify bit
+                    lista_classes[indicador] = 0  # Update class
+                    indicador += 1
+                    miss_capacidade += 1
+                else:
+                    if None in cache:
+                        index = cache.index(None)
+                        cache[index] = mem
+                        lista_bit_r[index] = 1  # Update reference bit
+                        lista_bit_m[index] = 0  # Update modify bit
+                        lista_classes[index] = 0  # Update class
+                        indicador += 1
+                        miss_compulsoria += 1
+                    else:
+                        classes = self.generate_lista_classes(lista_bit_r, lista_bit_m)
+                        min_class = min(classes)
+                        min_class_indices = [i for i, c in enumerate(classes) if c == min_class]
+                        lowest_class_indices = [i for i in min_class_indices if cache[i] is not None]
+                        index = random.choice(lowest_class_indices)  # Select a random index from the lowest class indices
+                        page_to_remove = cache[index]
+                        cache[index] = mem
+                        lista_bit_r[index] = 1  # Update reference bit
+                        lista_bit_m[index] = 0  # Update modify bit
+                        lista_classes[index] = 0  # Update class
+                        indicador += 1
+                        miss_compulsoria += 1
+                        substituidos.append(page_to_remove)
+   
+    
+            # Clock interrupt
+            clock_interrupt += 1
+            if clock_interrupt >= clock_interval:
+                lista_bit_r = [0] * self.linhas  # Reset all reference bits to 0
+                clock_interrupt = 0
+    
+            if indicador > self.linhas - 1:
+                indicador = 0
+    
+        print(f"Cache {', '.join([str(int) for int in cache])}")
+        print(f"HIT {hit}")
+        print(f"MISS compulsoria {miss_compulsoria}")
+        print(f"MISS capacidade {miss_capacidade}")
+        print(f"{len(substituidos)} Substituições")
+
 
 
 
