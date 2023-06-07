@@ -176,6 +176,66 @@ class AlgoritimoSubstitucao():
 
         print(f"Tempo de execução: {execution_time} segundos")
     
+    def nru(self):
+        miss_compulsoria = 0
+        miss_capacidade = 0
+        hit = 0
+        indicador = 0
+        substituidos = []
+        lista_bit_r = [0] * self.linhas
+        lista_bit_m = [0] * self.linhas
+        lista_classes = [None] * self.linhas
+        cache = [None] * self.linhas
+        clock_interrupt = 0  # Clock interrupt counter
+        clock_interval = 10  # Number of memory accesses before clock interrupt
+
+        for mem in self.ordem:
+            if mem in cache:
+                hit += 1
+                index = cache.index(mem)
+                lista_bit_r[index] = 1  # Update reference bit
+            else:
+                if mem in substituidos:
+                    index = substituidos.index(mem)
+                    cache[indicador] = mem
+                    lista_bit_r[indicador] = 1  # Update reference bit
+                    lista_bit_m[indicador] = 0  # Update modify bit
+                    lista_classes[indicador] = 0  # Update class
+                    indicador += 1
+                    miss_capacidade += 1
+                else:
+                    if None in cache:
+                        index = cache.index(None)
+                        cache[index] = mem
+                        lista_bit_r[index] = 1  # Update reference bit
+                        lista_bit_m[index] = 0  # Update modify bit
+                        lista_classes[index] = 0  # Update class
+                        indicador += 1
+                        miss_compulsoria += 1
+                    else:
+                        classes = self.generate_lista_classes(lista_bit_r, lista_bit_m)
+                        min_class = min(classes)
+                        min_class_indices = [i for i, c in enumerate(classes) if c == min_class]
+                        lowest_class_indices = [i for i in min_class_indices if cache[i] is not None]
+                        index = random.choice(lowest_class_indices)  # Select a random index from the lowest class indices
+                        page_to_remove = cache[index]
+                        cache[index] = mem
+                        lista_bit_r[index] = 1  # Update reference bit
+                        lista_bit_m[index] = 0  # Update modify bit
+                        lista_classes[index] = 0  # Update class
+                        indicador += 1
+                        miss_compulsoria += 1
+                        substituidos.append(page_to_remove)
+
+
+            # Clock interrupt
+            clock_interrupt += 1
+            if clock_interrupt >= clock_interval:
+                lista_bit_r = [0] * self.linhas  # Reset all reference bits to 0
+                clock_interrupt = 0
+
+            if indicador > self.linhas - 1:
+                indicador = 0
     def clock(self):
         miss_compulsoria = 0
         miss_capacidade = 0
